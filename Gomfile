@@ -1,0 +1,3 @@
+gom 'github.com/op/go-logging'
+gom 'github.com/smartystreets/goconvey/convey'
+gom 'github.com/influxdb/influxdb/client/v2'
