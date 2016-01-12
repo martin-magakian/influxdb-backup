@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	"github.com/influxdb/influxdb/client/v2"
 	"github.com/op/go-logging"
+	"gopkg.in/yaml.v2"
 	"os"
-	"strings"
+	//	"strings"
 )
 
 var version string
@@ -18,7 +20,15 @@ const (
 	password = "root"
 )
 
+type Config struct {
+	SourceType      string
+	SourceAddr      string
+	DestinationType string
+	DestinationAddr string
+}
+
 func main() {
+	var cfg Config
 	stderrBackend := logging.NewLogBackend(os.Stderr, "", 0)
 	stderrFormatter := logging.NewBackendFormatter(stderrBackend, stdout_log_format)
 	logging.SetBackend(stderrFormatter)
@@ -26,18 +36,48 @@ func main() {
 
 	log.Info("Starting app")
 	log.Debug("version: %s", version)
-	if !strings.ContainsRune(version, '-') {
-		log.Warning("once you tag your commit with name your version number will be prettier")
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "src-type",
+			Value:       "influx09",
+			Usage:       "Source type [influx09]",
+			Destination: &cfg.SourceType,
+		},
+		cli.StringFlag{
+			Name:        "src-addr",
+			Value:       "http://localhost:8086",
+			Usage:       "Source addr",
+			Destination: &cfg.SourceAddr,
+		},
+		cli.StringFlag{
+			Name:        "dst-type",
+			Value:       "influx09",
+			Usage:       "Destination type [influx09]",
+			Destination: &cfg.SourceType,
+		},
+		cli.StringFlag{
+			Name:        "dst-addr",
+			Value:       "http://localhost:8086",
+			Usage:       "Destination addr",
+			Destination: &cfg.SourceAddr,
+		},
 	}
+	app.Run(os.Args)
 	c, _ := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     "http://localhost:8086",
 		Username: username,
 		Password: password,
 	})
+	log.Notice("Source type: %s, addr: %s", cfg.SourceType, cfg.SourceAddr)
 	//q := client.NewQuery(`SELECT * FROM "dc1.ghroth_non_3dart_com.cpu.0.cpu.system" WHERE time > now() - 1h `, "stats", "ns")
 	q := client.NewQuery(`show series`, "stats", "ns")
 	if response, err := c.Query(q); err == nil && response.Error() == nil {
-		fmt.Printf("V: %+v\n", response.Results)
+		d, err := yaml.Marshal(&response)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
+		fmt.Printf("--- t dump:\n%s\n\n", string(d))
 	}
 	log.Info("v: %+v", c)
 
