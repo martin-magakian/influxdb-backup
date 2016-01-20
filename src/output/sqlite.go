@@ -5,11 +5,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"path/filepath"
 	"os"
+	"crypto/sha256"
+	"fmt"
+	"strings"
 
 )
 
 type SQLiteOut struct {
 	path string
+
 }
 
 func NewSQLite(path string) (Output,error) {
@@ -26,12 +30,13 @@ func NewSQLite(path string) (Output,error) {
 func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
 	s, err := sql.Open("sqlite3", filepath.Join(out.path, "series.sqlite"))
 	if (err != nil ) { return err }
-	_, err = s.Exec("CREATE TABLE IF NOT EXISTS series( name text UNIQUE )")
+	_, err = s.Exec("CREATE TABLE IF NOT EXISTS series( name text UNIQUE , file text )")
 	if (err != nil ) { return err }
 	_, err = s.Exec("BEGIN")
 	if (err != nil ) { return err }
 	for _, name := range series {
-		s.Exec("INSERT OR IGNORE INTO series(name) VALUES(?)",name)
+		_, err = s.Exec("INSERT OR IGNORE INTO series(name, file) VALUES(?,?)",name,SeriesNameGen(name))
+		if (err != nil ) { return err }
 	}
 	_, err = s.Exec("COMMIT")
 	if (err != nil ) { return err }
@@ -40,7 +45,24 @@ func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
 
 
 // Generate shortened series name
-// does not have to be unique, just unique enough that thousands of series wont land in same sqlite DB
+// does not have to be unique, just unique enough that tens of thousands of series wont land in same sqlite DB
 func SeriesNameGen(seriesName string) string {
-	return `s`
+	s := strings.Split(seriesName, `.`)
+	prefix := ``
+	if len(s[0]) > 5 {
+		prefix = s[0][:5]
+	} else {
+		prefix = s[0]
+	}
+	if len(s) > 3 {
+		if len(s[1]) > 5 {
+			prefix = prefix + `.` + s[1][:5]
+		} else {
+			prefix = prefix + `.` + s[1]
+
+		}
+	}
+	hash := sha256.Sum256([]byte(seriesName))
+	// 256 buckets + name-based prefix should be fine for most users
+	return prefix + fmt.Sprintf("-%x", hash)[:3]
 }

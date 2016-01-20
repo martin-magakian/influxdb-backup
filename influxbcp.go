@@ -1,12 +1,14 @@
 package main
 
 import (
-	"fmt"
+	//	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/influxdb/influxdb/client/v2"
 	"github.com/op/go-logging"
-	"gopkg.in/yaml.v2"
+	//	"gopkg.in/yaml.v2"
+	"input"
 	"os"
+	"output"
 	//	"strings"
 )
 
@@ -69,16 +71,26 @@ func main() {
 		Username: username,
 		Password: password,
 	})
+	_ = c
 	log.Notice("Source type: %s, addr: %s", cfg.SourceType, cfg.SourceAddr)
-	//q := client.NewQuery(`SELECT * FROM "dc1.ghroth_non_3dart_com.cpu.0.cpu.system" WHERE time > now() - 1h `, "stats", "ns")
-	q := client.NewQuery(`show series`, "stats", "ns")
-	if response, err := c.Query(q); err == nil && response.Error() == nil {
-		d, err := yaml.Marshal(&response)
-		if err != nil {
-			log.Fatalf("error: %v", err)
-		}
-		fmt.Printf("--- t dump:\n%s\n\n", string(d))
+	influxIn, err := input.NewInflux09("http://localhost:8086", "root", "root", "stats")
+	if err != nil {
+		log.Error("input failed: %s", err)
+		os.Exit(1)
 	}
-	log.Info("v: %+v", c)
+	sqliteOut, err := output.NewSQLite(`t-data/sqlite`)
+	if err != nil {
+		log.Error("output failed: %s", err)
+		os.Exit(1)
+	}
+	series, err := influxIn.GetSeriesList()
+	log.Info("saving series list")
+	err = sqliteOut.SaveSeriesList(series)
+	if err != nil {
+		log.Error("saving series list failed: %s", err)
+		os.Exit(1)
+	}
+
+	//	log.Info("v: %+v", series)
 
 }

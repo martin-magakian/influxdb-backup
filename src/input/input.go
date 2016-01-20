@@ -70,7 +70,7 @@ func (d *DummyIn) GetFieldRangeByName(name string, start time.Time, end time.Tim
 	midField.Name = name
 	midField.Tags = make(map[string]string)
 	midField.Values = make(map[string]interface{})
-	midField.Values[`time`] = (startTs + endTs ) / 2
+	midField.Values[`time`] = ( startTs + endTs ) / 2
 
 
 	return []common.Field{startField, midField, endField}, err

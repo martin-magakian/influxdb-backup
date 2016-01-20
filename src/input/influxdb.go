@@ -92,8 +92,6 @@ func (influx *Influx09Input) GetFieldRangeByName(name string, start time.Time, e
 						f.Values[ columns[j] ] = value
 					}
 				}
-
-
 				datapoints = append(datapoints,f)
 			}
 		 }
