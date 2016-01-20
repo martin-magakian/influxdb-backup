@@ -69,16 +69,16 @@ func (influx *Influx09Input) GetFieldRangeByName(name string, start time.Time, e
 		err = res.Error()
 		return datapoints, err
 	}
-	var s []string
 	for _, result := range res.Results {
 		for _, ser := range result.Series {
 			columns := ser.Columns
-			for i, value := range ser.Values {
+			for _, value := range ser.Values {
 				var f common.Field
 				f.Name = ser.Name
 				f.Tags = ser.Tags
 				f.Values = make(map[string]interface{})
 				for j, value := range value {
+					// influxdb lib is a bit funny
 					if w, ok := value.(json.Number); ok {
 						// check if it is an int or float
 						a, _ := w.Float64()
@@ -93,18 +93,10 @@ func (influx *Influx09Input) GetFieldRangeByName(name string, start time.Time, e
 					}
 				}
 
-				_ = i
 
 				datapoints = append(datapoints,f)
 			}
-
-			_ = result
-			_ = columns
-
 		 }
 	}
-	_ = s
-	_ = q
-	_ =  datapoints
 	return datapoints, err
 }
