@@ -78,7 +78,7 @@ func main() {
 		log.Error("input failed: %s", err)
 		os.Exit(1)
 	}
-	sqliteOut, err := output.NewSQLite(`t-data/sqlite`)
+	sqliteOut, err := output.New(`sqlite`,`t-data/sqlite`)
 	if err != nil {
 		log.Error("output failed: %s", err)
 		os.Exit(1)

@@ -1,4 +1,4 @@
-package output
+package sqlite
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
@@ -7,11 +7,11 @@ import (
 
 func TestSQLite(t *testing.T) {
 	sql, err := NewSQLite(`t-data/sqlite`)
-	Convey("N", t, func() {
+	Convey("Create DB", t, func() {
 		So(err, ShouldEqual, nil)
 	})
 	err = sql.SaveSeriesList([]string{"test"})
-	Convey("N", t, func() {
+	Convey("SaveSeriesList", t, func() {
 		So(err, ShouldEqual, nil)
 	})
 }

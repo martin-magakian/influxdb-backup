@@ -1,4 +1,4 @@
-package output
+package sqlite
 
 import (
 	"database/sql"
@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"strings"
+	"github.com/efigence/influxdb-backup/src/common"
 
 )
 
@@ -16,7 +17,11 @@ type SQLiteOut struct {
 
 }
 
-func NewSQLite(path string) (Output,error) {
+func New(args []string) (common.Output,error) {
+	return NewSQLite(args[0])
+}
+
+func NewSQLite(path string) (common.Output,error) {
 	var err error
 	var out SQLiteOut
 	var mode os.FileMode
