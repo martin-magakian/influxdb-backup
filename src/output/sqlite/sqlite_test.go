@@ -14,4 +14,8 @@ func TestSQLite(t *testing.T) {
 	Convey("SaveSeriesList", t, func() {
 		So(err, ShouldEqual, nil)
 	})
+	err = sql.SaveFields(`dc1.testserv1`)
+	Convey("SaveFieldsList", t, func() {
+		So(err, ShouldEqual, nil)
+	})
 }
