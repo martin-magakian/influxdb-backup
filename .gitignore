@@ -24,6 +24,7 @@ cover-cobertura.xml
 cover.json
 report.xml
 .env.sh
+influxbcp
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -45,4 +46,3 @@ _testmain.go
 # local test data
 
 t-data/*local
-
