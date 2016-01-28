@@ -5,22 +5,21 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"path/filepath"
 	"os"
-	"crypto/sha256"
-	"hash"
+	"hash/fnv"
 	"errors"
 	"fmt"
-	"strings"
+//	"strings"
 	"github.com/efigence/influxdb-backup/src/common"
 
 )
 
 type SQLiteOut struct {
+	spineMask uint64  // mask, MSB bits
+	leafMask uint64   // mask, LSB bits
 	path string
-	spine int // number of directories
-	leaf int // number of files per dir
-	hash hash.Hash
+	leafBits uint8 // number of directories
+	spineBits uint8 // number of files per dir
 	nosync bool
-
 }
 
 func New(args []string) (common.Output,error) {
@@ -34,12 +33,18 @@ func NewSQLite(path string) (common.Output,error) {
 	mode = 0744
 	os.MkdirAll(path, mode)
 	out.path = path
+	out.leafBits = 2
+	out.spineBits = 9
+	// spine uses MSB bits
+	out.spineMask = ^uint64(0) << (64-out.spineBits)
+	// leaf uses LSB bits
+	out.leafMask = powOf2(out.leafBits) - 1
 	return &out,err
 
 }
 
 func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
-	s, err := sql.Open("sqlite3", filepath.Join(out.path, "series.sqlite"))
+	s, err := sql.Open("sqlite3", filepath.Join(out.path, "asd/series.sqlite"))
 	if (err != nil ) { return err }
 	if out.nosync {
 		_, err = s.Exec("PRAGMA  synchronous = 0")
@@ -50,7 +55,7 @@ func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
 	_, err = s.Exec("BEGIN")
 	if (err != nil ) { return err }
 	for _, name := range series {
-		_, err = s.Exec("INSERT OR IGNORE INTO series(name, file) VALUES(?,?)",name,SeriesNameGen(name))
+		_, err = s.Exec("INSERT OR IGNORE INTO series(name, file) VALUES(?,?)",name,out.SeriesNameGen(name))
 		if (err != nil ) { return err }
 	}
 	_, err = s.Exec("COMMIT")
@@ -63,25 +68,15 @@ func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
 
 // Generate shortened series name
 // does not have to be unique, just unique enough that tens of thousands of series wont land in same sqlite DB
-func SeriesNameGen(seriesName string) string {
-	s := strings.Split(seriesName, `.`)
-	prefix := ``
-	if len(s[0]) > 5 {
-		prefix = s[0][:5]
-	} else {
-		prefix = s[0]
-	}
-	if len(s) > 3 {
-		if len(s[1]) > 5 {
-			prefix = prefix + `.` + s[1][:5]
-		} else {
-			prefix = prefix + `.` + s[1]
+func (out *SQLiteOut) SeriesNameGen(seriesName string) string {
+	hasher := fnv.New64a()
+	hasher.Write([]byte(seriesName))
+	hash := hasher.Sum64()
 
-		}
-	}
-	hash := sha256.Sum256([]byte(seriesName))
-	// 256 buckets + name-based prefix should be fine for most users
-	return prefix + fmt.Sprintf("-%x", hash)[:3]
+	leaf := hash & out.leafMask
+	spine := (hash & out.spineMask)  >> (64 - out.spineBits)
+
+	return fmt.Sprintf("%x/%x.sqlite",spine, leaf)
 }
 
 func (out *SQLiteOut) SaveFields(prefix string) (error) {
@@ -107,4 +102,21 @@ func (out *SQLiteOut) SaveFields(prefix string) (error) {
 func quoteTableName (in string)(out string) {
 	//fixme
 	return in
+}
+
+
+// there is no generic pow() in golang stdlib()
+func powOf2(b uint8) uint64 {
+  var result uint64 = 1;
+  var a uint64 = 2
+  for 0 != b {
+    if 0 != (b & 1) {
+      result *= a;
+
+    }
+    b >>= 1;
+    a *= a;
+  }
+
+  return result;
 }
