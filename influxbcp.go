@@ -73,7 +73,7 @@ func main() {
 	})
 	_ = c
 	log.Notice("Source type: %s, addr: %s", cfg.SourceType, cfg.SourceAddr)
-	influxIn, err := input.NewInflux09("http://localhost:8086", "root", "root", "stats")
+	influxIn, err := input.NewInflux09("http://localhost:8086", "root", "root", "_internal")
 	if err != nil {
 		log.Error("input failed: %s", err)
 		os.Exit(1)
@@ -84,7 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 	series, err := influxIn.GetSeriesList()
-	log.Info("saving series list")
+	log.Info("saving series list %+v", series)
 	err = sqliteOut.SaveSeriesList(series)
 	if err != nil {
 		log.Error("saving series list failed: %s", err)

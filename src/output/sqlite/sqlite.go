@@ -10,6 +10,8 @@ import (
 	"fmt"
 //	"strings"
 	"github.com/efigence/influxdb-backup/src/common"
+	"github.com/op/go-logging"
+
 
 )
 
@@ -23,6 +25,8 @@ type SQLiteOut struct {
 	workers *writers
 }
 
+var log = logging.MustGetLogger("main")
+
 func New(args []string) (common.Output,error) {
 	return NewSQLite(args[0])
 }
@@ -35,7 +39,8 @@ func NewSQLite(path string) (common.Output,error) {
 	os.MkdirAll(path, mode)
 	out.path = path
 	out.leafBits = 2
-	out.spineBits = 9
+	out.spineBits = 4
+	log.Info("Initializing SQLite store in %s using %d dirs dir names and %d files per dir",path, powOf2(out.spineBits), powOf2(out.leafBits))
 	// spine uses MSB bits
 	out.spineMask = ^uint64(0) << (64-out.spineBits)
 	// leaf uses LSB bits
@@ -107,7 +112,7 @@ func sqliteOpen(pathComponents []string, nosync bool) (s *sql.DB, err error) {
 	_, err = s.Exec("BEGIN;COMMIT")
 	if (err != nil ) { return s, errors.New("sql init: " + err.Error() + "; dbfile: " + path ) }
 	if nosync {
-		_, err = s.Exec("PRAGMA  synchronous = 0")
+		_, err = s.Exec("PRAGMA  synchronous = OFF")
 		if (err != nil ) { return s, errors.New("sql desync: " + err.Error()) }
 	}
 
