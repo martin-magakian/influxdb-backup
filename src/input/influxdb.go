@@ -38,7 +38,7 @@ type Influx09Input struct {
 func (influx *Influx09Input) GetSeriesList() ([]string, error) {
 	var err error
 	var out []string
-	q := client.NewQuery(`show series`, "stats", "ns")
+	q := client.NewQuery(`show series`, "_internal", "ns")
 	res  ,err  := influx.Client.Query(q)
 	if res.Error() != nil {
 		err = res.Error()

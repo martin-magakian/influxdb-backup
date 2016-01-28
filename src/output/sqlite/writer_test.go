@@ -20,7 +20,6 @@ func TestWriter(t *testing.T) {
 	close(writeCh) // close channel so writer exits
 	err := RunWriter(writeCh, []string{`t-data`,`point-writer-test.sqlite`}, false)
 	Convey("WritePoint", t, func() {
-		So(err,ShouldNotBeNil)
-		So(nil, ShouldEqual, nil)
+		So(err,ShouldBeNil)
 	})
 }
