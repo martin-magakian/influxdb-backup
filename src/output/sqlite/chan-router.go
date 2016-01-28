@@ -18,7 +18,7 @@ func (s *SQLiteOut) route(in chan *common.Field){
 		if ch, ok := r.routingTable[routingKey]; ok {
 			ch <- field
 		} else {
-
+			s.workers.GetRouteFor(routingKey)
 		}
 	}
 }
