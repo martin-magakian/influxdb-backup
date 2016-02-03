@@ -5,6 +5,7 @@ import (
 	"github.com/efigence/influxdb-backup/src/common"
 	"strings"
 	"fmt"
+	"database/sql"
 )
 
 type writers struct {
@@ -13,8 +14,6 @@ type writers struct {
 	path string
 	writeCh map[string]chan *common.Field
 	shutdown sync.WaitGroup
-	shutdownCh map[string]chan bool
-
 }
 
 
@@ -63,9 +62,13 @@ func (w *writers) GetRouteFor(r string) (chan *common.Field,error) {
 func (w *writers) Shutdown() {
 	w.Lock()
 	defer w.Unlock()
+	log.Debug("sending stop signal to workers")
 	for _, ch := range w.writeCh {
 		close(ch)
 	}
+	log.Debug("waiting for workers to finish")
+	w.shutdown.Wait()
+	log.Debug("gfinished")
 }
 
 
@@ -77,12 +80,12 @@ func (w *writers) RunWriter (req chan *common.Field, path []string,nosync bool) 
 	go func() {
 		// shutdown indicator
 		w.shutdown.Add(1)
-		defer w.shutdown.Done()
 		WriterLoop(db,req)
 		//cleanup
 		log.Debug("writer for %+v finished, flushing", path)
 		_, err = db.Exec("PRAGMA  synchronous = FULL")
 		log.Debug("writer for %+v exiting", path)
+		 w.shutdown.Done()
 	}()
 	return err
 }
@@ -101,6 +104,7 @@ func WriterLoop(db *sql.DB, req chan *common.Field) {
 			params[i] = `?`
 			i++
 		}
+		log.Debug("writing %s",tableName)
 		query := "INSERT INTO " +
 			tableName +
 			"(" + strings.Join(keys,`,`) + ")" +

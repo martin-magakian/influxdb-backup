@@ -66,23 +66,23 @@ func (out *SQLiteOut) Close() (err error) {
 
 
 func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
-	s, err := sql.Open("sqlite3", filepath.Join(out.path, "series.sqlite"))
+	db, err := sql.Open("sqlite3", filepath.Join(out.path, "series.sqlite"))
 	if (err != nil ) { return err }
 	if out.nosync {
-		_, err = s.Exec("PRAGMA  synchronous = 0")
+		_, err = db.Exec("PRAGMA  synchronous = 0")
 		if (err != nil ) { return err }
 	}
-	_, err = s.Exec("CREATE TABLE IF NOT EXISTS series( name TEXT UNIQUE , file TEXT )")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS series( name TEXT UNIQUE , file TEXT )")
 	if (err != nil ) { return err }
-	_, err = s.Exec("BEGIN")
+	_, err = db.Exec("BEGIN")
 	if (err != nil ) { return err }
 	for _, name := range series {
-		_, err = s.Exec("INSERT OR IGNORE INTO series(name, file) VALUES(?,?)",name,out.SeriesNameGen(name))
+		_, err = db.Exec("INSERT OR IGNORE INTO series(name, file) VALUES(?,?)",name,out.SeriesNameGen(name))
 		if (err != nil ) { return err }
 	}
-	_, err = s.Exec("COMMIT")
+	_, err = db.Exec("COMMIT")
 	if (err != nil ) { return err }
-	err = s.Close()
+	err = db.Close()
 
 	return err
 }
@@ -102,12 +102,12 @@ func (out *SQLiteOut) SeriesNameGen(seriesName string) string {
 }
 
 func (out *SQLiteOut) SaveFields(prefix string) (error) {
-	s, err := sqliteOpen( []string{out.path, prefix + ".sqlite"} , false )
-	_, err = s.Exec("CREATE TABLE IF NOT EXISTS asd ( time INT, tags TEXT, a TEXT )",`asd`)
+	db, err := sqliteOpen( []string{out.path, prefix + ".sqlite"} , false )
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS asd ( time INT, tags TEXT, a TEXT )",`asd`)
 	if (err != nil ) { return errors.New("CT: " + err.Error()) }
-	rows, err := s.Query("PRAGMA table_info( ? )",`asd`)
+	rows, err := db.Query("PRAGMA table_info( ? )",`asd`)
 	if (err != nil ) { return errors.New("Pragma: " + err.Error()) }
-	s.Close()
+	db.Close()
 	return errors.New(fmt.Sprintf("%+v %s %s %s",rows, err,  prefix))
 
 }
@@ -117,22 +117,22 @@ func quoteTableName (in string)(out string) {
 	return in
 }
 
-func sqliteOpen(pathComponents []string, nosync bool) (s *sql.DB, err error) {
+func sqliteOpen(pathComponents []string, nosync bool) (db *sql.DB, err error) {
 	path :=  filepath.Join(pathComponents...)
 	dir, _ := filepath.Split(path)
 	err = os.MkdirAll(dir,0755)
-	if (err != nil ) { return s, errors.New("mkdir: " + err.Error() + "; path: " + dir ) }
-	s, err = sql.Open("sqlite3",path)
-	if (err != nil ) { return s, errors.New("sql open: " + err.Error() + "; dbfile: " + path ) }
+	if (err != nil ) { return db, errors.New("mkdir: " + err.Error() + "; path: " + dir ) }
+	db, err = sql.Open("sqlite3",path)
+	if (err != nil ) { return db, errors.New("sql open: " + err.Error() + "; dbfile: " + path ) }
 	// sqlite is lazy and it only checks on first access; force it
-	_, err = s.Exec("BEGIN;COMMIT")
-	if (err != nil ) { return s, errors.New("sql init: " + err.Error() + "; dbfile: " + path ) }
+	_, err = db.Exec("BEGIN;COMMIT")
+	if (err != nil ) { return db, errors.New("sql init: " + err.Error() + "; dbfile: " + path ) }
 	if nosync {
-		_, err = s.Exec("PRAGMA  synchronous = OFF")
-		if (err != nil ) { return s, errors.New("sql desync: " + err.Error()) }
+		_, err = db.Exec("PRAGMA  synchronous = OFF")
+		if (err != nil ) { return db, errors.New("sql desync: " + err.Error()) }
 	}
 
-	return s,err
+	return db,err
 }
 
 

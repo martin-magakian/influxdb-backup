@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	//	"sync"
+	"fmt"
 	"github.com/efigence/influxdb-backup/src/common"
 )
 
@@ -18,7 +19,12 @@ func (s *SQLiteOut) route(in chan *common.Field){
 		if ch, ok := r.routingTable[routingKey]; ok {
 			ch <- field
 		} else {
-			s.workers.GetRouteFor(routingKey)
+			ch, err := s.workers.GetRouteFor(routingKey)
+			if (err != nil) {
+				panic(fmt.Sprintf("Err when getting route for %s: %s", routingKey,err))
+			}
+			r.routingTable[routingKey] = ch
+			ch <- field
 		}
 	}
 }
