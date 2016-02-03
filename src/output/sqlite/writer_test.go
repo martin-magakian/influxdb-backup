@@ -17,7 +17,6 @@ func TestWriter(t *testing.T) {
 
 	writeCh := make(chan *common.Field, 1)
 	writeCh <- &f
-	close(writeCh) // close channel so writer exits
 	var sql SQLiteOut
 	sql.Init("t-data/router-test")
 
@@ -25,6 +24,8 @@ func TestWriter(t *testing.T) {
 	Convey("WritePoint", t, func() {
 		So(err,ShouldBeNil)
 	})
+	close(writeCh) // close channel so writer exits
+
 	sql.workers.Shutdown()
 }
 
@@ -43,13 +44,12 @@ func TestQuoting(t *testing.T) {
 	writeCh <- &f
 	writeCh <- &f
 	var sql SQLiteOut
-	sql.Init("t-data/router-test")
+	sql.Init("t-data/quote-test")
 
-	err := sql.workers.RunWriter(writeCh, []string{`t-data`,`point-writer-test.sqlite`}, false)
+	err := sql.workers.RunWriter(writeCh, []string{`t-data`,`quoted-writer-test.sqlite`}, false)
 	Convey("WriteGarbageFields", t, func() {
 		So(err,ShouldBeNil)
 	})
 	close(writeCh) // close channel so writer exits
-    time.Sleep(1000 * time.Millisecond)
 	sql.workers.Shutdown()
 }

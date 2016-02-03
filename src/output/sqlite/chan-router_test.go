@@ -28,6 +28,5 @@ func TestRouter(t *testing.T) {
 	ch <- &f
 	ch <- &f
 	close(ch)
-//    time.Sleep(1000 * time.Millisecond)
 	sql.workers.Shutdown()
 }

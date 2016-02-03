@@ -68,7 +68,6 @@ func (w *writers) Shutdown() {
 	}
 	log.Debug("waiting for workers to finish")
 	w.shutdown.Wait()
-	log.Debug("gfinished")
 }
 
 
@@ -77,15 +76,16 @@ func (w *writers) RunWriter (req chan *common.Field, path []string,nosync bool) 
 	db, err := sqliteOpen(path ,nosync)
 	log.Debug("Running writer for %+v",path)
 	if err != nil {return err}
+	w.shutdown.Add(1)
 	go func() {
+		defer w.shutdown.Done()
 		// shutdown indicator
-		w.shutdown.Add(1)
 		WriterLoop(db,req)
 		//cleanup
 		log.Debug("writer for %+v finished, flushing", path)
 		_, err = db.Exec("PRAGMA  synchronous = FULL")
 		log.Debug("writer for %+v exiting", path)
-		 w.shutdown.Done()
+
 	}()
 	return err
 }
