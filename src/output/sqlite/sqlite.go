@@ -31,23 +31,39 @@ func New(args []string) (common.Output,error) {
 	return NewSQLite(args[0])
 }
 
+
+
 func NewSQLite(path string) (common.Output,error) {
 	var err error
 	var out SQLiteOut
+	out.Init(path)
+	return &out,err
+}
+
+func (out *SQLiteOut) Init(path string) {
 	var mode os.FileMode
 	mode = 0744
-	os.MkdirAll(path, mode)
 	out.path = path
 	out.leafBits = 2
 	out.spineBits = 4
-	log.Info("Initializing SQLite store in %s using %d dirs dir names and %d files per dir",path, powOf2(out.spineBits), powOf2(out.leafBits))
-	// spine uses MSB bits
+	log.Info("Initializing SQLite store in %s using %d dirs and %d files per dir",path, powOf2(out.spineBits), powOf2(out.leafBits))
 	out.spineMask = ^uint64(0) << (64-out.spineBits)
-	// leaf uses LSB bits
 	out.leafMask = powOf2(out.leafBits) - 1
-	return &out,err
+	os.MkdirAll(path, mode)
+	worker := out.newWriter()
+	out.workers = &worker
 
 }
+// start writing data
+func (out *SQLiteOut) Run(in []chan *common.Field) (err error) {
+	return err
+
+}
+// stop writing and close data
+func (out *SQLiteOut) Close() (err error) {
+	return err
+}
+
 
 func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
 	s, err := sql.Open("sqlite3", filepath.Join(out.path, "series.sqlite"))
