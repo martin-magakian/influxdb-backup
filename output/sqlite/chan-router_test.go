@@ -20,6 +20,7 @@ func TestRouter(t *testing.T) {
 		So(sql.writers, ShouldNotBeNil)
 	})
 	ch := make(chan *common.Field, 128)
+	sql.routers.Add(1)
 	go sql.route(ch)
 	ch <- &f
 	ch <- &f
