@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 )
 
-type writers struct {
+type dbWriters struct {
 	sync.RWMutex
 	nosync   bool
 	path     string
@@ -19,14 +19,14 @@ type writers struct {
 }
 
 // once started writer's path/sync mode cant be changed, copy any relevant parameters at the creation time
-func (s *SQLiteOut) newWriter() (w writers) {
+func (s *SQLiteOut) newWriter() (w dbWriters) {
 	w.nosync = s.nosync
 	w.path = s.path
 	w.writeCh = make(map[string]chan *common.Field)
 	return w
 }
 
-func (w *writers) NewChannel(name string) (chan *common.Field, error) {
+func (w *dbWriters) NewChannel(name string) (chan *common.Field, error) {
 	var err error
 	w.Lock()
 	defer w.Unlock()
@@ -47,7 +47,7 @@ func (w *writers) NewChannel(name string) (chan *common.Field, error) {
 	}
 }
 
-func (w *writers) GetRouteFor(r string) (chan *common.Field, error) {
+func (w *dbWriters) GetRouteFor(r string) (chan *common.Field, error) {
 	var err error
 	w.RLock()
 	if ch, ok := w.writeCh[r]; ok {
@@ -59,7 +59,7 @@ func (w *writers) GetRouteFor(r string) (chan *common.Field, error) {
 		return w.NewChannel(r)
 	}
 }
-func (w *writers) Shutdown() {
+func (w *dbWriters) Shutdown() {
 	w.Lock()
 	defer w.Unlock()
 	log.Debug("sending stop signal to workers")
@@ -70,7 +70,7 @@ func (w *writers) Shutdown() {
 	w.shutdown.Wait()
 }
 
-func (w *writers) RunWriter(req chan *common.Field, path []string, nosync bool) (err error) {
+func (w *dbWriters) RunWriter(req chan *common.Field, path []string, nosync bool) (err error) {
 	// short-circuit if error
 	db, err := sqliteOpen(path, nosync)
 	log.Debug("Running writer for %+v", path)

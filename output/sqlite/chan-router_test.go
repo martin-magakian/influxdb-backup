@@ -17,7 +17,7 @@ func TestRouter(t *testing.T) {
 	f.Values[`data`] = "lie"
 	f.Values[`other_thing`] = time.Now()
 	Convey("Create writer", t, func() {
-		So(sql.workers, ShouldNotBeNil)
+		So(sql.writers, ShouldNotBeNil)
 	})
 	ch := make(chan *common.Field, 128)
 	go sql.route(ch)
@@ -26,5 +26,5 @@ func TestRouter(t *testing.T) {
 	ch <- &f
 	ch <- &f
 	close(ch)
-	sql.workers.Shutdown()
+	sql.writers.Shutdown()
 }

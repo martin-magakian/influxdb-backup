@@ -19,7 +19,7 @@ func (s *SQLiteOut) route(in chan *common.Field) {
 		if ch, ok := r.routingTable[routingKey]; ok {
 			ch <- field
 		} else {
-			ch, err := s.workers.GetRouteFor(routingKey)
+			ch, err := s.writers.GetRouteFor(routingKey)
 			if err != nil {
 				panic(fmt.Sprintf("Err when getting route for %s: %s", routingKey, err))
 			}

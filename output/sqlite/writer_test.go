@@ -20,13 +20,13 @@ func TestWriter(t *testing.T) {
 	var sql SQLiteOut
 	sql.Init("t-data/router-test")
 
-	err := sql.workers.RunWriter(writeCh, []string{`t-data`, `point-writer-test.sqlite`}, false)
+	err := sql.writers.RunWriter(writeCh, []string{`t-data`, `point-writer-test.sqlite`}, false)
 	Convey("WritePoint", t, func() {
 		So(err, ShouldBeNil)
 	})
 	close(writeCh) // close channel so writer exits
 
-	sql.workers.Shutdown()
+	sql.writers.Shutdown()
 }
 
 func TestQuoting(t *testing.T) {
@@ -46,10 +46,10 @@ func TestQuoting(t *testing.T) {
 	var sql SQLiteOut
 	sql.Init("t-data/quote-test")
 
-	err := sql.workers.RunWriter(writeCh, []string{`t-data`, `quoted-writer-test.sqlite`}, false)
+	err := sql.writers.RunWriter(writeCh, []string{`t-data`, `quoted-writer-test.sqlite`}, false)
 	Convey("WriteGarbageFields", t, func() {
 		So(err, ShouldBeNil)
 	})
 	close(writeCh) // close channel so writer exits
-	sql.workers.Shutdown()
+	sql.writers.Shutdown()
 }

@@ -21,7 +21,7 @@ type SQLiteOut struct {
 	leafBits  uint8 // number of directories
 	spineBits uint8 // number of files per dir
 	nosync    bool
-	workers   *writers
+	writers   *dbWriters
 	routers   sync.WaitGroup
 }
 
@@ -49,7 +49,7 @@ func (out *SQLiteOut) Init(path string) {
 	out.leafMask = powOf2(out.leafBits) - 1
 	os.MkdirAll(path, mode)
 	worker := out.newWriter()
-	out.workers = &worker
+	out.writers = &worker
 
 }
 
@@ -67,12 +67,12 @@ func (out *SQLiteOut) Run(in []chan *common.Field) (err error) {
 // stop writing and close data
 func (out *SQLiteOut) Shutdown() (err error) {
 	out.routers.Wait()
-	out.workers.Shutdown()
+	out.writers.Shutdown()
 	return err
 }
 
 func (out *SQLiteOut) GetTotalWrites() uint64 {
-	return out.workers.writes
+	return out.writers.writes
 }
 
 func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
