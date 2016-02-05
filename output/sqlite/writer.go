@@ -96,22 +96,21 @@ func WriterLoop(db *sql.DB, req chan *common.Field, reqCtr *uint64) {
 	iter := 0
 	db.Exec("Begin")
 	for field := range req {
-		tableName := quoteTableName(field.Name)
+		tableName := quoteName(field.Name)
 		l := len(field.Values)
 		keys := make([]string, l, l)
 		values := make([]interface{}, l, l)
 		params := make([]string, l, l)
 		i := 0
 		for k, v := range field.Values {
-			keys[i] = k
+			keys[i] = `"` + quoteName(k) + `"`
 			values[i] = v
 			params[i] = `?`
 			i++
 		}
-		query := "INSERT INTO " +
-			tableName +
-			"(" + strings.Join(keys, `,`) + ")" +
-			" VALUES (" + strings.Join(params, `,`) + ")"
+		query := `INSERT INTO "` + tableName + `" ` +
+			`(` + strings.Join(keys, `,`) + `)` +
+			` VALUES (` + strings.Join(params, `,`) + `)`
 
 		_, err := db.Exec(query, values...)
 		// I haven't found way to directly extract SQLite errors so we will have to rely on error strings;/

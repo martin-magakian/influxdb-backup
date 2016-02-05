@@ -137,10 +137,6 @@ func (out *SQLiteOut) SaveFields(prefix string) error {
 
 }
 
-func quoteTableName(in string) (out string) {
-	//fixme
-	return in
-}
 
 func sqliteOpen(pathComponents []string, nosync bool) (db *sql.DB, err error) {
 	path := filepath.Join(pathComponents...)
