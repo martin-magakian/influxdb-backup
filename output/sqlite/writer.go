@@ -117,13 +117,13 @@ func WriterLoop(db *sql.DB, req chan *common.Field, reqCtr *uint64) {
 		// I haven't found way to directly extract SQLite errors so we will have to rely on error strings;/
 		// dynamically create tables
 		if err != nil && strings.Contains(err.Error(), "no such table") {
-			_, err = db.Exec("CREATE TABLE " + tableName + "( time INTEGER );")
+			_, err = db.Exec(`CREATE TABLE "` + tableName + `" ( time INTEGER );`)
 			_, err = db.Exec(query, values...)
 		}
 		// dynamically create fields...
 		for err != nil && strings.Contains(err.Error(), "no column named") {
 			out := strings.Split(err.Error(), "has no column named ")
-			_, err = db.Exec("ALTER TABLE " + tableName + " ADD COLUMN " + out[1] + " BLOB")
+			_, err = db.Exec(`ALTER TABLE "` + tableName + `" ADD COLUMN "` + out[1] + `" BLOB`)
 			_, err = db.Exec(query, values...)
 			log.Debug("ERR: %+v", err)
 		}
