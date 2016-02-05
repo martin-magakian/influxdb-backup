@@ -8,6 +8,7 @@ import (
 	"hash/fnv"
 	"errors"
 	"fmt"
+	"sync"
 //	"strings"
 	"github.com/efigence/influxdb-backup/common"
 	"github.com/op/go-logging"
@@ -23,6 +24,7 @@ type SQLiteOut struct {
 	spineBits uint8 // number of files per dir
 	nosync bool
 	workers *writers
+	routers sync.WaitGroup
 }
 
 var log = logging.MustGetLogger("main")
@@ -57,7 +59,8 @@ func (out *SQLiteOut) Init(path string) {
 // start writing data
 func (out *SQLiteOut) Run(in []chan *common.Field) (err error) {
 	for i, ch := range in {
-		log.Debug("Running router gor %i", i)
+		out.routers.Add(1)
+		log.Debug("Running router gor %d", i)
 		go  out.route(ch)
 	}
 	return err
@@ -65,10 +68,14 @@ func (out *SQLiteOut) Run(in []chan *common.Field) (err error) {
 }
 // stop writing and close data
 func (out *SQLiteOut) Shutdown() (err error) {
+	out.routers.Wait()
 	out.workers.Shutdown()
 	return err
 }
 
+func (out *SQLiteOut) GetTotalWrites() (uint64) {
+	return out.workers.writes
+}
 
 func (out *SQLiteOut) SaveSeriesList(series []string) (err error) {
 	db, err := sql.Open("sqlite3", filepath.Join(out.path, "series.sqlite"))

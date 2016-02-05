@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"sync"
+	"sync/atomic"
 	"github.com/efigence/influxdb-backup/common"
 	"strings"
 	"fmt"
@@ -14,6 +15,7 @@ type writers struct {
 	path string
 	writeCh map[string]chan *common.Field
 	shutdown sync.WaitGroup
+	writes uint64
 }
 
 
@@ -35,7 +37,7 @@ func (w *writers) NewChannel(name string) (chan *common.Field, error) {
 		return ch,err
 	} else {
 		log.Debug(`creating channel for DB, key %s`,name)
-		w.writeCh[name] = make(chan *common.Field,16384)
+		w.writeCh[name] = make(chan *common.Field,16)
 		path := []string{w.path, name + `.sqlite` }
 		err := w.RunWriter(w.writeCh[name],path,w.nosync)
 		if (err == nil) {
@@ -80,17 +82,20 @@ func (w *writers) RunWriter (req chan *common.Field, path []string,nosync bool) 
 	go func() {
 		defer w.shutdown.Done()
 		// shutdown indicator
-		WriterLoop(db,req)
+		WriterLoop(db,req,&w.writes)
 		//cleanup
 		log.Debug("writer for %+v finished, flushing", path)
 		_, err = db.Exec("PRAGMA  synchronous = FULL")
 		log.Debug("writer for %+v exiting", path)
+		db.Close()
 
 	}()
 	return err
 }
 
-func WriterLoop(db *sql.DB, req chan *common.Field) {
+func WriterLoop(db *sql.DB, req chan *common.Field,reqCtr *uint64) {
+	iter:=0
+	db.Exec("Begin")
 	for field := range req {
 		tableName := quoteTableName(field.Name)
 		l := len(field.Values)
@@ -117,17 +122,21 @@ func WriterLoop(db *sql.DB, req chan *common.Field) {
 			_, err = db.Exec(query, values...)
 		}
 		// dynamically create fields...
-		if err != nil && strings.Contains(err.Error(), "no column named") {
+		for(err != nil && strings.Contains(err.Error(), "no column named")) {
 			out := strings.Split(err.Error(), "has no column named ")
-			if (len(out) < 0) {panic(fmt.Sprintf("cant parse error %s", err)) }
-			for(strings.Contains(err.Error(), "no column named")) {
-				_, err = db.Exec("ALTER TABLE " + tableName + " ADD COLUMN " + out[1] + " BLOB")
-				_, err = db.Exec(query, values...)
-			}
+			_, err = db.Exec("ALTER TABLE " + tableName + " ADD COLUMN " + out[1] + " BLOB")
+			_, err = db.Exec(query, values...)
+			log.Debug("ERR: %+v", err)
 		}
 		if err != nil {
 			panic(fmt.Sprintf("%+v",err))
 		}
-
+		iter++
+		atomic.AddUint64(reqCtr,1)
+		if ( (iter % 10000) == 9999) {
+			_, err =db.Exec("COMMIT")
+		}
 	}
+	db.Exec("COMMIT")
+	log.Debug("Writer extited after %d iterations",iter)
 }

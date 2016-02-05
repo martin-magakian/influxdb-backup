@@ -13,6 +13,7 @@ type router struct {
 
 func (s *SQLiteOut) route(in chan *common.Field){
 	var r router
+	defer s.routers.Done()
 	r.routingTable = make(map[string]chan *common.Field)
 	for field := range in {
 		routingKey := s.SeriesNameGen(field.Name)

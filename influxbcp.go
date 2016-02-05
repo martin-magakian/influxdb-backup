@@ -10,6 +10,7 @@ import (
 	"github.com/efigence/influxdb-backup/input"
 	"github.com/efigence/influxdb-backup/output"
 	"os"
+	"sync"
 	"time"
 	//	"strings"
 )
@@ -27,6 +28,7 @@ const (
 type Config struct {
 	SourceType      string
 	SourceAddr      string
+	DebugAddr       string
 	DestinationType string
 	DestinationAddr string
 }
@@ -66,6 +68,12 @@ func main() {
 			Usage:       "Destination addr",
 			Destination: &cfg.SourceAddr,
 		},
+		cli.StringFlag{
+			Name:        "debug-addr",
+			Value:       "none",
+			Usage:       "Listen address of pprof in form of http://localhost:12345",
+			Destination: &cfg.DebugAddr,
+		},
 	}
 	app.Run(os.Args)
 	c, _ := client.NewHTTPClient(client.HTTPConfig{
@@ -74,6 +82,12 @@ func main() {
 		Password: password,
 	})
 	_ = c
+	if cfg.DebugAddr != "none" {
+		common.RunDebug(cfg.DebugAddr)
+	} else {
+		log.Error("wtf")
+		common.RunDebug("localhost:6060")
+	}
 	log.Notice("Source type: %s, addr: %s", cfg.SourceType, cfg.SourceAddr)
 	influxIn, err := input.NewInflux09("http://localhost:8086", "root", "root", "_internal")
 	if err != nil {
@@ -86,24 +100,32 @@ func main() {
 		os.Exit(1)
 	}
 	series, err := influxIn.GetSeriesList()
-	fields, err := influxIn.GetFieldRangeByName(series[0], time.Now().Add(-1*time.Hour), time.Now())
-	log.Info("saving series list %+v", series)
-	ch := make(chan *common.Field, 10)
-	err = sqliteOut.Run([]chan *common.Field{ch})
-	if err != nil {
-		log.Error("running writer failed: %s", err)
+	var wg sync.WaitGroup
+	for _, ser := range series {
+		fields, err := influxIn.GetFieldRangeByName(ser, time.Now().Add(-1*time.Hour), time.Now())
+		ch := make(chan *common.Field, 1)
+		err = sqliteOut.Run([]chan *common.Field{ch})
+		if err != nil {
+			log.Error("running writer failed: %s", err)
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, ev := range fields {
+				ch <- &ev
+			}
+			close(ch)
+
+		}()
 	}
-	for _, ev := range fields {
-		log.Info("saving %s", ev.Name)
-		ch <- &ev
-	}
-	close(ch)
+	wg.Wait()
 	err = sqliteOut.SaveSeriesList(series)
 	if err != nil {
 		log.Error("saving series list failed: %s", err)
 		os.Exit(1)
 	}
 	sqliteOut.Shutdown()
+	log.Notice("Written %d records total", sqliteOut.GetTotalWrites())
 
 	//	log.Info("v: %+v", series)
 

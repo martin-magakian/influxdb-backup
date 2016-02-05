@@ -6,4 +6,5 @@ type Output interface {
 	Shutdown() error
 	SaveSeriesList([]string) error
 	SaveFields(string) error
+	GetTotalWrites() uint64
 }
