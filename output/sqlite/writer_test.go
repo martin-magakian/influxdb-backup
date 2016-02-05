@@ -1,15 +1,15 @@
 package sqlite
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/efigence/influxdb-backup/common"
+	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
 )
 
 func TestWriter(t *testing.T) {
 	var f common.Field
-	f.Name  = "zupa"
+	f.Name = "zupa"
 	f.Values = make(map[string]interface{})
 	f.Values[`time`] = time.Now()
 	f.Values[`cake`] = "lie"
@@ -20,9 +20,9 @@ func TestWriter(t *testing.T) {
 	var sql SQLiteOut
 	sql.Init("t-data/router-test")
 
-	err := sql.workers.RunWriter(writeCh, []string{`t-data`,`point-writer-test.sqlite`}, false)
+	err := sql.workers.RunWriter(writeCh, []string{`t-data`, `point-writer-test.sqlite`}, false)
 	Convey("WritePoint", t, func() {
-		So(err,ShouldBeNil)
+		So(err, ShouldBeNil)
 	})
 	close(writeCh) // close channel so writer exits
 
@@ -31,7 +31,7 @@ func TestWriter(t *testing.T) {
 
 func TestQuoting(t *testing.T) {
 	var f common.Field
-	f.Name  = "bad-name-test"
+	f.Name = "bad-name-test"
 	f.Values = make(map[string]interface{})
 	f.Values[`time`] = time.Now()
 	f.Values[`cake`] = "lie"
@@ -46,9 +46,9 @@ func TestQuoting(t *testing.T) {
 	var sql SQLiteOut
 	sql.Init("t-data/quote-test")
 
-	err := sql.workers.RunWriter(writeCh, []string{`t-data`,`quoted-writer-test.sqlite`}, false)
+	err := sql.workers.RunWriter(writeCh, []string{`t-data`, `quoted-writer-test.sqlite`}, false)
 	Convey("WriteGarbageFields", t, func() {
-		So(err,ShouldBeNil)
+		So(err, ShouldBeNil)
 	})
 	close(writeCh) // close channel so writer exits
 	sql.workers.Shutdown()

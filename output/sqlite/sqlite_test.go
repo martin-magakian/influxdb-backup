@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var testSeriesList  = []string{
+var testSeriesList = []string{
 	"dc1.testhost_test_domain.cpu.0.cpu.idle",
 	"dc1.testhost_test_domain.cpu.0.cpu.interrupt",
 	"dc1.testhost_test_domain.cpu.0.cpu.nice",
@@ -52,7 +52,6 @@ var testSeriesList  = []string{
 	"dc1.testhost_test_domain.swap.swap_io.in",
 	"dc1.testhost_test_domain.swap.swap_io.out",
 }
-
 
 func TestSQLite(t *testing.T) {
 	sql, err := NewSQLite(`t-data/sqlite`)

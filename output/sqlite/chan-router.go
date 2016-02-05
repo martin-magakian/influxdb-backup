@@ -8,10 +8,9 @@ import (
 
 type router struct {
 	routingTable map[string]chan *common.Field
-
 }
 
-func (s *SQLiteOut) route(in chan *common.Field){
+func (s *SQLiteOut) route(in chan *common.Field) {
 	var r router
 	defer s.routers.Done()
 	r.routingTable = make(map[string]chan *common.Field)
@@ -21,8 +20,8 @@ func (s *SQLiteOut) route(in chan *common.Field){
 			ch <- field
 		} else {
 			ch, err := s.workers.GetRouteFor(routingKey)
-			if (err != nil) {
-				panic(fmt.Sprintf("Err when getting route for %s: %s", routingKey,err))
+			if err != nil {
+				panic(fmt.Sprintf("Err when getting route for %s: %s", routingKey, err))
 			}
 			r.routingTable[routingKey] = ch
 			ch <- field

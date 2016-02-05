@@ -1,15 +1,15 @@
 package input
 
 import (
-	"github.com/influxdb/influxdb/client/v2"
-	"time"
-	"github.com/op/go-logging"
+	"encoding/json"
 	"fmt"
 	"github.com/efigence/influxdb-backup/common"
-	"encoding/json"
+	"github.com/influxdb/influxdb/client/v2"
+	"github.com/op/go-logging"
+	"time"
 )
-var log = logging.MustGetLogger("main")
 
+var log = logging.MustGetLogger("main")
 
 func NewInflux09(addr string, user string, pass string, db string) (Input, error) {
 	var influx Influx09Input
@@ -20,33 +20,32 @@ func NewInflux09(addr string, user string, pass string, db string) (Input, error
 		Password: pass,
 	})
 	if err != nil {
-		return &influx,err
+		return &influx, err
 	}
 	influx.Db = db
 	influx.Client = c
 
-	return &influx,  err
+	return &influx, err
 }
 
-
 type Influx09Input struct {
-	Addr string
+	Addr   string
 	Client client.Client
-	Db string
+	Db     string
 }
 
 func (influx *Influx09Input) GetSeriesList() ([]string, error) {
 	var err error
 	var out []string
 	q := client.NewQuery(`show series`, influx.Db, "ns")
-	res  ,err  := influx.Client.Query(q)
+	res, err := influx.Client.Query(q)
 	if res.Error() != nil {
 		err = res.Error()
 		return out, err
 	}
 
 	for _, v := range res.Results[0].Series {
-		out = append(out,v.Name)
+		out = append(out, v.Name)
 
 	}
 
@@ -84,17 +83,17 @@ func (influx *Influx09Input) GetFieldRangeByName(name string, start time.Time, e
 						a, _ := w.Float64()
 
 						if a == float64(int64(a)) {
-							f.Values[ columns[j] ], _ = w.Int64()
+							f.Values[columns[j]], _ = w.Int64()
 						} else {
-							f.Values[ columns[j] ] = a
+							f.Values[columns[j]] = a
 						}
 					} else {
-						f.Values[ columns[j] ] = value
+						f.Values[columns[j]] = value
 					}
 				}
-				datapoints = append(datapoints,f)
+				datapoints = append(datapoints, f)
 			}
-		 }
+		}
 	}
 	return datapoints, err
 }
