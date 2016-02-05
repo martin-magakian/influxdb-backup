@@ -3,7 +3,7 @@ package sqlite
 import (
 	//	"sync"
 	"fmt"
-	"github.com/efigence/influxdb-backup/src/common"
+	"github.com/efigence/influxdb-backup/common"
 )
 
 type router struct {

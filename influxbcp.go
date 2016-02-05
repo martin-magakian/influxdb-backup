@@ -6,9 +6,11 @@ import (
 	"github.com/influxdb/influxdb/client/v2"
 	"github.com/op/go-logging"
 	//	"gopkg.in/yaml.v2"
-	"input"
 	"os"
-	"output"
+	"github.com/efigence/influxdb-backup/input"
+	"github.com/efigence/influxdb-backup/output"
+	"github.com/efigence/influxdb-backup/common"
+	"time"
 	//	"strings"
 )
 
@@ -84,7 +86,17 @@ func main() {
 		os.Exit(1)
 	}
 	series, err := influxIn.GetSeriesList()
+	fields, err := influxIn.GetFieldRangeByName(series[0], time.Now().Add(-1*time.Hour), time.Now())
 	log.Info("saving series list %+v", series)
+	channels := make([]chan *common.Field,1)
+	err = sqliteOut.Run(channels)
+	if err != nil {
+		log.Error("running writer failed: %s", err)
+	}
+	for _, ev := range fields {
+		channels[0] <- &ev
+	}
+	sqliteOut.Shutdown()
 	err = sqliteOut.SaveSeriesList(series)
 	if err != nil {
 		log.Error("saving series list failed: %s", err)

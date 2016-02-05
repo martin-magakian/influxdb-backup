@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/efigence/influxdb-backup/src/common"
+	"github.com/efigence/influxdb-backup/common"
 	"testing"
 	"time"
 )

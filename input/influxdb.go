@@ -5,7 +5,7 @@ import (
 	"time"
 	"github.com/op/go-logging"
 	"fmt"
-	"common"
+	"github.com/efigence/influxdb-backup/common"
 	"encoding/json"
 )
 var log = logging.MustGetLogger("main")

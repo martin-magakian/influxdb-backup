@@ -1,7 +1,7 @@
 package input
 
 import (
-	"common"
+	"github.com/efigence/influxdb-backup/common"
 	"time"
 //	"github.com/influxdb/influxdb/client/v2"
 )

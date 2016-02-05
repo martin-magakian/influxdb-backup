@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	"sync"
-	"github.com/efigence/influxdb-backup/src/common"
+	"github.com/efigence/influxdb-backup/common"
 	"strings"
 	"fmt"
 	"database/sql"
@@ -104,7 +104,6 @@ func WriterLoop(db *sql.DB, req chan *common.Field) {
 			params[i] = `?`
 			i++
 		}
-		log.Debug("writing %s",tableName)
 		query := "INSERT INTO " +
 			tableName +
 			"(" + strings.Join(keys,`,`) + ")" +

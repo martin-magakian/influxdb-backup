@@ -1,8 +1,8 @@
 package output
 
 import (
-	"github.com/efigence/influxdb-backup/src/output/sqlite"
-	"github.com/efigence/influxdb-backup/src/common"
+	"github.com/efigence/influxdb-backup/output/sqlite"
+	"github.com/efigence/influxdb-backup/common"
 )
 
 

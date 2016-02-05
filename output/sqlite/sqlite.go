@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 //	"strings"
-	"github.com/efigence/influxdb-backup/src/common"
+	"github.com/efigence/influxdb-backup/common"
 	"github.com/op/go-logging"
 
 
