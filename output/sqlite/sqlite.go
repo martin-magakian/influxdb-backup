@@ -56,11 +56,16 @@ func (out *SQLiteOut) Init(path string) {
 }
 // start writing data
 func (out *SQLiteOut) Run(in []chan *common.Field) (err error) {
+	for i, ch := range in {
+		log.Debug("Running router gor %i", i)
+		go  out.route(ch)
+	}
 	return err
 
 }
 // stop writing and close data
-func (out *SQLiteOut) Close() (err error) {
+func (out *SQLiteOut) Shutdown() (err error) {
+	out.workers.Shutdown()
 	return err
 }
 
