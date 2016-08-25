@@ -3,7 +3,7 @@ package main
 import (
 	//	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/influxdb/influxdb/client/v2"
+	"github.com/influxdata/influxdb/client/v2"
 	"github.com/op/go-logging"
 	//	"gopkg.in/yaml.v2"
 	"github.com/efigence/influxdb-backup/common"
